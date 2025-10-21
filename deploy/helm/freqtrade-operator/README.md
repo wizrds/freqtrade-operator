@@ -9,7 +9,7 @@ Helm chart for deploying the freqtrade-operator
 To install the chart with the release name `my-release`:
 
 ```console
-$ helm upgrade --install freqtrade-operator oci://registry.gitlab.com/wizrds/freqtrade-operator/charts/freqtrade-operator
+$ helm upgrade --install freqtrade-operator oci://ghcr.io/wizrds/freqtrade-operator/charts/freqtrade-operator
 ```
 
 ## Requirements
@@ -56,7 +56,7 @@ $ helm upgrade --install freqtrade-operator oci://registry.gitlab.com/wizrds/fre
 | controller.volumes | list | `[]` | Additional volumes on the output controller Deployment definition |
 | fullnameOverride | string | `""` | Fullname override |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy |
-| image.repository | string | `"registry.gitlab.com/wizrds/freqtrade-operator"` | The image repository to pull from |
+| image.repository | string | `"ghcr.io/wizrds/freqtrade-operator"` | The image repository to pull from |
 | image.tag | string | `""` | The image tag to pull, default is the chart appVersion. |
 | imagePullSecrets | list | `[]` | Image pull secrets |
 | installCRDs | bool | `true` | Install the CRDs Set to false if you want to skip the CRD installation for any reason such as running the operator in a cluster that already has the CRDs installed. |

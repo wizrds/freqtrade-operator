@@ -139,7 +139,7 @@ controller:
 
 image:
   # -- The image repository to pull from
-  repository: registry.gitlab.com/wizrds/freqtrade-operator
+  repository: ghcr.io/wizrds/freqtrade-operator
   # -- The image pull policy
   pullPolicy: IfNotPresent
   # -- The image tag to pull, default is the chart appVersion.

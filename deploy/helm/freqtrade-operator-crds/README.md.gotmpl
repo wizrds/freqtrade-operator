@@ -8,7 +8,7 @@
 To install the chart with the release name `my-release`:
 
 ```console
-$ helm upgrade --install freqtrade-operator-crds oci://registry.gitlab.com/wizrds/freqtrade-operator/charts/{{ template "chart.name" . }}
+$ helm upgrade --install freqtrade-operator-crds oci://ghcr.io/wizrds/freqtrade-operator/charts/{{ template "chart.name" . }}
 ```
 
 {{ template "chart.requirementsSection" . }}

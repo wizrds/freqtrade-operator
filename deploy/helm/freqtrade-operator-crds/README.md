@@ -9,7 +9,7 @@ A Helm chart for the CRDs of the freqtrade-operator
 To install the chart with the release name `my-release`:
 
 ```console
-$ helm upgrade --install freqtrade-operator-crds oci://registry.gitlab.com/wizrds/freqtrade-operator/charts/freqtrade-operator-crds
+$ helm upgrade --install freqtrade-operator-crds oci://ghcr.io/wizrds/freqtrade-operator/charts/freqtrade-operator-crds
 ```
 
 ----------------------------------------------
