@@ -1,0 +1,47 @@
+version: '3'
+
+vars:
+  SPDX_LICENSE: ISC
+  SPDX_COPYOWNER: Timothy Pogue
+  SPDX_COPYYEAR: "2025"
+
+tasks:
+  pack:
+    cmds:
+      - npx repomix {{.CLI_ARGS}}
+
+  annotate:spdx:
+    cmds:
+      - |
+        reuse annotate \
+          --copyright "{{.SPDX_COPYOWNER}}" \
+          --license "{{.SPDX_LICENSE}}" \
+          --year "{{.SPDX_COPYYEAR}}" \
+          --single-line \
+          --copyright-prefix spdx \
+          ft-operator-common/**/*.rs \
+          ft-operator-controller/**/*.rs \
+          ft-operator-webhook/**/*.rs \
+          ft-operator/**/*.rs
+
+  generate:sbom:
+    cmds:
+      - |
+        syft . \
+          -o cyclonedx-json=sbom/sbom.cdx.json \
+          -q
+
+        syft . \
+          -o spdx-json=sbom/sbom.spdx.json \
+          -q
+
+  generate:sbom:image:
+    cmds:
+      - |
+        syft {{.IMAGE_NAME}} \
+          -o cyclonedx-json=sbom/sbom.oci.cdx.json \
+          -q
+
+        syft {{.IMAGE_NAME}} \
+          -o spdx-json=sbom/sbom.oci.spdx.json \
+          -q

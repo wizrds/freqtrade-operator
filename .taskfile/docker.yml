@@ -1,0 +1,19 @@
+version: '3'
+
+tasks:
+  build:
+    desc: Build the application in a Docker container
+    vars:
+      IMAGE_NAME: '{{ .IMAGE_NAME | default "freqtrade-operator" }}'
+      IMAGE_TAG: '{{ .IMAGE_TAG | default "local" }}'
+      DOCKER_BUILD_ARGS: '{{ .DOCKER_BUILD_ARGS | default "" }}'
+    cmds:
+      - docker build -f build/docker/Dockerfile {{.DOCKER_BUILD_ARGS}} -t {{.IMAGE_NAME}}:{{.IMAGE_TAG}} .
+
+  push-local:
+    desc: Push the Docker image to the local registry
+    vars:
+      LOCAL_IMAGE_NAME: k3d-dev.localhost:5000/freqtrade-operator
+    cmds:
+      - docker tag {{.IMAGE_NAME}}:{{.IMAGE_TAG}} {{.LOCAL_IMAGE_NAME}}:{{.IMAGE_TAG}}
+      - docker push {{.LOCAL_IMAGE_NAME}}:{{.IMAGE_TAG}}

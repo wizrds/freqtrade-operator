@@ -1,0 +1,20 @@
+{
+  "output": {
+    "filePath": "repomix.output.md",
+    "style": "markdown",
+    "instructionFilePath": "repomix.instruction.md",
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "topFilesLength": 5,
+    "showLineNumbers": false,
+    "copyToClipboard": false
+  },
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": []
+  },
+  "security": {
+    "enableSecurityCheck": true
+  }
+}

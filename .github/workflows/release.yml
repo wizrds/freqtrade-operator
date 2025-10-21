@@ -1,0 +1,265 @@
+name: release
+
+on:
+  push:
+    tags: ["*"]
+
+env:
+  IMAGE_REGISTRY: "ghcr.io"
+  IMAGE_NAME: "wizrds/freqtrade-operator"
+  IMAGE_URI: "ghcr.io/wizrds/freqtrade-operator"
+
+jobs:
+  generate-sbom:
+    if: |
+      "!contains(github.event.head_commit.message, '[skip-ci]') &&
+      github.repository == 'wizrds/freqtrade-operator'"
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: "3.43.3"
+
+      - name: Generate SBOM SPDX
+        uses: anchore/sbom-action@v0
+        with:
+          format: spdx-json
+          output-file: sbom/sbom.spdx.json
+          artifact-name: sbom.spdx.json
+
+      - name: Generate SBOM CycloneDX
+        uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          output-file: sbom/sbom.cyclonedx.json
+          artifact-name: sbom.cyclonedx.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom/
+
+  build-docker:
+    if: |
+      "!contains(github.event.head_commit.message, '[skip-ci]') &&
+      github.repository == 'wizrds/freqtrade-operator'"
+    needs: [generate-sbom]
+    name: Build and push docker image.
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+      packages: write
+      id-token: write
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: "3.43.3"
+
+      - name: Download SBOM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom
+          path: sbom/
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build OCI image
+        run: |
+          task docker:build IMAGE_NAME=${{ env.IMAGE_URI }} IMAGE_TAG=${{ github.ref_name }}
+          
+      - name: Generate OCI Image SBOM SPDX
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE_URI }}:${{ github.ref_name }}
+          format: spdx-json
+          output-file: sbom/sbom.oci.spdx.json
+          artifact-name: sbom.oci.spdx.json
+
+      - name: Generate OCI Image SBOM CycloneDX
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE_URI }}:${{ github.ref_name }}
+          format: cyclonedx-json
+          output-file: sbom/sbom.oci.cyclonedx.json 
+          artifact-name: sbom.oci.cyclonedx.json       
+
+      - name: Scan OCI image
+        uses: anchore/scan-action@v6
+        id: scan
+        with:
+          image: ${{ env.IMAGE_URI }}:${{ github.ref_name }}
+          fail-build: true
+          severity-cutoff: high
+
+      - name: Upload OCI SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-oci
+          path: sbom/sbom.oci.*.json
+
+      - name: Inspect SARIF report
+        run: |
+          cat ${{ steps.scan.outputs.sarif }}
+
+      - name: Upload SARIF report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
+      - name: Push OCI image
+        run: |
+          docker push ${{ env.IMAGE_URI }}:${{ github.ref_name }}
+
+  publish-helm-charts:
+    if: |
+      "!contains(github.event.head_commit.message, '[skip-ci]') &&
+      github.repository == 'wizrds/freqtrade-operator'"
+    name: Publish Helm Charts
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - chart_path: deploy/helm/freqtrade-operator
+          - chart_path: deploy/helm/freqtrade-operator-crds
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Set up Helm and yq
+      uses: docker://dtzar/helm-kubectl:3.17.0
+      with:
+        args: /bin/sh -c "helm version && yq --version"
+
+    - name: Extract chart name and version
+      id: chart_info
+      run: |
+        CHART_PATH="${{ matrix.chart_path }}"
+        CHART_NAME=$(yq e '.name' "$CHART_PATH/Chart.yaml")
+        CHART_VERSION=$(yq e '.version' "$CHART_PATH/Chart.yaml")
+
+        echo "chart_name=$CHART_NAME" >> $GITHUB_OUTPUT
+        echo "chart_version=$CHART_VERSION" >> $GITHUB_OUTPUT
+        echo "chart_path=$CHART_PATH" >> $GITHUB_OUTPUT
+
+    - name: Login to GitHub Container Registry
+      env:
+        CR_PAT: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "$CR_PAT" | helm registry login ${{ env.IMAGE_REGISTRY }} --username ${{ github.actor }} --password-stdin
+
+    - name: Check if chart version already exists
+      env:
+        CHART_NAME: ${{ steps.chart_info.outputs.chart_name }}
+        CHART_VERSION: ${{ steps.chart_info.outputs.chart_version }}
+      run: |
+        set +e
+        helm show all "oci://${{ env.IMAGE_URI }}/charts/$CHART_NAME" --version "$CHART_VERSION" > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+          echo "Chart $CHART_NAME version $CHART_VERSION already exists in GHCR, skipping publish."
+          exit 0
+        fi
+        set -e
+
+    - name: Package and push chart
+      env:
+        CHART_NAME: ${{ steps.chart_info.outputs.chart_name }}
+        CHART_VERSION: ${{ steps.chart_info.outputs.chart_version }}
+        CHART_PATH: ${{ steps.chart_info.outputs.chart_path }}
+      run: |
+        helm package "$CHART_PATH" \
+          --version "$CHART_VERSION" \
+          --destination "$CHART_PATH" \
+          --dependency-update
+
+        helm push "$CHART_PATH/$CHART_NAME-$CHART_VERSION.tgz" \
+          "oci://${{ env.IMAGE_URI }}/charts"
+
+  make-release:
+    if: |
+      "!contains(github.event.head_commit.message, '[skip-ci]') &&
+      github.repository == 'wizrds/freqtrade-operator'"
+    needs: [build-binaries, generate-sbom, build-docker]
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: "3.43.3"
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: artifacts
+
+      - name: Extract changelog for release
+        id: changelog
+        run: |
+          TAG=$(task version:current)
+          PREV_VERSION=$(grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -n 2 | tail -n 1 | sed -E 's/^## \[([^]]+)\].*/\1/')
+          
+          awk -v tag="$TAG" -v prev="$PREV_VERSION" '
+            # When we hit the tag anchor, start looking but skip the next header line
+            $0 ~ ("^<a name=\"" tag "\"") { printing=0; seen_tag=1; next }
+
+            # Skip the header line itself once after the tag
+            seen_tag && $0 ~ ("^## \\[" tag "\\]") { printing=1; next }
+
+            # Stop printing once we reach the previous version
+            $0 ~ ("^<a name=\"" prev "\"") { exit }
+            $0 ~ ("^## \\[" prev "\\]") { exit }
+
+            # Print content only when inside the tag section
+            printing
+          ' CHANGELOG.md > release_notes.md
+          
+          echo "Release notes for $TAG:"
+          cat release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          body_path: release_notes.md
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+            artifacts/sbom.*.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

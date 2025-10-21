@@ -1,0 +1,87 @@
+version: '3'
+
+tasks:
+  template:
+    desc: Template charts
+    cmds:
+      - helm template {{.CHART_NAME}} deploy/helm/{{.CHART_NAME}} --debug {{.CLI_ARGS}}
+
+  lint: 
+    desc: Lint charts
+    cmds:
+      - helm lint deploy/helm/*
+
+  dry_run: 
+    desc: Dry run charts
+    cmds:
+      - |
+        helm template {{.CHART_NAME}} deploy/helm/{{.CHART_NAME}} --debug {{.CLI_ARGS}}
+
+  docs: 
+    desc: Generate docs
+    cmds:
+      - |
+        if command -v helm-docs >/dev/null 2>&1; then
+          helm-docs --chart-search-root=deploy/helm {{.CLI_ARGS}}
+        elif command -v docker >/dev/null 2>&1; then
+          docker run \
+            --rm \
+            --volume "$(pwd):/helm-docs" \
+            -u $(id -u) \
+            jnorwood/helm-docs:{{.HELM_DOCS_VERSION}} \
+            --chart-search-root=deploy/helm \
+            {{.CLI_ARGS}}
+        else
+          echo "Error: helm-docs binary not found and Docker is not available." >&2
+          exit 1
+        fi
+
+  release: 
+    desc: Release chart
+    cmds:
+      - |
+        if [ -z "$HELM_REGISTRY_USER" ] | [ -z "$HELM_REGISTRY_PASS" ]; then
+          echo "Error: HELM_REGISTRY_USER or HELM_REGISTRY_PASS env var is not set";
+          exit 1;
+        fi
+      - |
+        export LOCAL_VERSION=$(yq e '.version' deploy/helm/{{.CHART_NAME}}/Chart.yaml)
+        export REMOTE_VERSION=$(helm search repo remote/{{.CHART_NAME}} --versions --output json | jq -r '.[0].version')
+        echo "LOCAL_VERSION=$LOCAL_VERSION"
+        echo "REMOTE_VERSION=$REMOTE_VERSION"
+
+        if [ "$LOCAL_VERSION" == "$REMOTE_VERSION" ]; then
+          echo "No new version to release";
+          exit 0;
+        fi
+
+        helm package deploy/helm/{{.CHART_NAME}} -d deploy/helm/{{.CHART_NAME}}/dist
+        export CHART_PACKAGE=$(find deploy/helm/{{.CHART_NAME}}/dist -type f -name "{{.CHART_NAME}}-*.tgz" | head -1)
+        echo "CHART_PACKAGE=$CHART_PACKAGE"
+        curl -u $HELM_REGISTRY_USER:$HELM_REGISTRY_PASS --data-binary "@$CHART_PACKAGE" -X POST $HELM_REGISTRY_URL/api/charts
+
+  operator:release:
+    desc: Release the operator helm chart
+    cmds:
+      - task: helm:release
+        vars:
+          CHART_NAME: freqtrade-operator
+
+  crds:release:
+    desc: Release the crds helm chart
+    cmds:
+      - task: helm:release
+        vars:
+          CHART_NAME: freqtrade-operator-crds
+
+  operator:install:
+    desc: Install the operator helm chart
+    cmds:
+      - |
+        helm upgrade --install freqtrade-operator deploy/helm/freqtrade-operator --namespace default --create-namespace --set installCRDs=false {{.CLI_ARGS}}
+  
+  crds:install:
+    desc: Install the crds helm chart
+    cmds:
+      - |
+        helm upgrade --install freqtrade-operator-crds deploy/helm/freqtrade-operator-crds --namespace default --create-namespace {{.CLI_ARGS}}

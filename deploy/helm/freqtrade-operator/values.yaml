@@ -1,0 +1,164 @@
+# -- Install the CRDs
+# Set to false if you want to skip the CRD installation for any reason
+# such as running the operator in a cluster that already has the CRDs installed.
+installCRDs: true
+
+admissionWebhook:
+  # -- Amount of replicas to deploy for the admission webhook
+  replicaCount: 1
+  # -- Enable the admission webhook
+  enabled: true
+  # -- The port the admission webhook listens on
+  port: 8443
+  tls:
+    # -- Existing secret with the TLS certificate and key
+    existingSecret: ""
+    # -- The custom CA bundle to use
+    caBundle: ""
+  # -- Additional annotations to add to the webhook pod
+  podAnnotations: {}
+  # -- Additional labels to add to the webhook pod
+  podLabels: {}
+  # -- Webhook Pod Security Context
+  podSecurityContext: {}
+    # fsGroup: 2000
+  # -- Webhook container Security Context
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+  # -- Any extra environment variables to pass to the webhook container
+  env: {}
+  #  SOME_ENV_VAR:
+  #    value: "some value"
+  #  ANOTHER_ENV_VAR:
+  #    valueFrom:
+  #      secretKeyRef:
+  #        name: some-secret
+  #        key: some-key
+  service:
+    # -- The port the webhook service listens on
+    type: ClusterIP
+    # -- Additional port mappings
+    ports: []
+  # -- Resources to allocate to the webhook pod
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  # -- Webhook Pod liveness probe
+  livenessProbe:
+    # @ignored
+    httpGet:
+      path: /
+      port: webhook
+      scheme: HTTPS
+  # -- Webhook Pod readiness probe
+  readinessProbe:
+    # @ignored
+    httpGet:
+      path: /
+      port: webhook
+      scheme: HTTPS
+  # -- Additional volumes on the output webhook Deployment definition
+  volumes: []
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+  # -- Additional volumeMounts on the output webhook Deployment definition.
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+  # -- Webhook Node selector
+  nodeSelector: {}
+  # -- Webhook Tolerations
+  tolerations: []
+  # -- Webhook Affinity
+  affinity: {}
+
+controller:
+  # -- Amount of replicas to deploy for the controller
+  replicaCount: 1
+  # -- Additional annotations to add to the controller pod
+  podAnnotations: {}
+  # -- Additional labels to add to the controller pod
+  podLabels: {}
+  # -- Controller Pod Security Context
+  podSecurityContext: {}
+    # fsGroup: 2000
+  # -- Controller container Security Context
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+  # -- Resources to allocate to the controller
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  # -- Any extra environment variables to pass to the controller container
+  env: {}
+  #  SOME_ENV_VAR:
+  #    value: "some value"
+  #  ANOTHER_ENV_VAR:
+  #    valueFrom:
+  #      secretKeyRef:
+  #        name: some-secret
+  #        key: some-key
+  # -- Additional volumes on the output controller Deployment definition
+  volumes: []
+  # - name: foo
+  #   secret:
+  #     secretName: mysecret
+  #     optional: false
+  # -- Additional volumeMounts on the output controller Deployment definition.
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+  # -- Controller Node selector
+  nodeSelector: {}
+  # -- Controller Tolerations
+  tolerations: []
+  # -- Controller Affinity
+  affinity: {}
+
+image:
+  # -- The image repository to pull from
+  repository: registry.gitlab.com/wizrds/freqtrade-operator
+  # -- The image pull policy
+  pullPolicy: IfNotPresent
+  # -- The image tag to pull, default is the chart appVersion.
+  tag: ""
+
+# -- Image pull secrets
+imagePullSecrets: []
+# -- Name override
+nameOverride: ""
+# -- Fullname override
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""

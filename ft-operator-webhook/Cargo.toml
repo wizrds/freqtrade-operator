@@ -1,0 +1,24 @@
+[package]
+name = "ft-operator-webhook"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+repository.workspace = true
+license.workspace = true
+readme.workspace = true
+
+[dependencies]
+ft-operator-common = { path = "../ft-operator-common" }
+ft-operator-controller = { path = "../ft-operator-controller" }
+
+anyhow = { version = "1.0.75" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+axum = { version = "0.7.4", features = ["tracing"] }
+axum-server = { version = "0.7.1", features = ["tls-rustls"] }
+tokio = { version = "1", features = ["full", "signal"] }
+tokio-util = "0.7.10"
+tracing = "0.1"
+thiserror = "1"
+kube = { version = "0.93.1", default-features = true, features = ["derive", "runtime", "admission"] }
+k8s-openapi = { version = "0.22", default-features = false, features = ["v1_30"] }

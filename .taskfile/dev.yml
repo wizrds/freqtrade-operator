@@ -1,0 +1,59 @@
+version: '3'
+
+includes:
+  devtools:
+    taskfile: devtools.yml
+
+tasks:
+  gen:certs:
+    desc: Generate test certificates
+    cmds:
+      - >
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certs/tls.key -out certs/tls.crt -subj "/CN=localhost"
+
+  gen:crds:
+    desc: Generate the CustomResourceDefinition manifests
+    cmds:
+      - >
+        cargo run --bin freqtrade-operator -- crds > crds/freqtrade.io.yaml
+      - >
+        cp crds/freqtrade.io.yaml deploy/helm/freqtrade-operator-crds/templates/freqtrade.io.yaml
+
+  apply:crds:
+    desc: Apply the CustomResourceDefinition manifests
+    cmds:
+      - >
+        cargo run --bin freqtrade-operator -- crds | kubectl apply -f - 
+
+  docs:crds:
+    desc: Generate the CRD reference docs
+    deps: [devtools:install]
+    cmds:
+      - >
+        crdoc --resources crds/ --output docs/reference.md
+
+  build:
+    desc: Build the application
+    cmds:
+      - cargo build --all-features --release {{.CLI_ARGS}}
+
+  run:
+    desc: Run the program
+    cmds:
+      - >
+        cargo run {{.FEATURES}} {{.CLI_ARGS}}
+
+  run:controller:
+    desc: Run the program in development mode
+    cmds:
+      - >
+        cargo run {{.FEATURES}} -- controller {{.CLI_ARGS}}
+
+  run:webhook:
+    desc: Run the program in development mode
+    env:
+      FTO__WEBHOOK__TLS__CERT_FILE: certs/tls.crt
+      FTO__WEBHOOK__TLS__KEY_FILE: certs/tls.key
+    cmds:
+      - >
+        cargo run {{.FEATURES}} -- webhook {{.CLI_ARGS}}

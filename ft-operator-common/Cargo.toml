@@ -1,0 +1,22 @@
+[package]
+name = "ft-operator-common"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+repository.workspace = true
+license.workspace = true
+readme.workspace = true
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+tokio-util = "0.7.10"
+serde = "1"
+serde_json = "1.0"
+figment = { version = "0.10.19", features = ["toml", "json", "yaml", "env"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "chrono"] }
+tracing-opentelemetry = "0.25.0"
+opentelemetry = { version = "0.24.0", features = ["trace"] }
+opentelemetry-otlp = "0.17.0"
+tower-http = "0.5.2"
+blake3 = "1.5.4"

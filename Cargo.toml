@@ -1,0 +1,18 @@
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+description = "Kubernetes Freqtrade Operator"
+authors = ["Tim Pogue <me@pogue.dev>"]
+repository = "https://github.com/wizrds/freqtrade-operator"
+license = "ISC"
+readme = "README.md"
+
+[workspace]
+resolver = "2"
+members = [
+    "ft-operator-common",
+    "ft-operator-controller",
+    "ft-operator-webhook",
+    "ft-operator",
+]
+

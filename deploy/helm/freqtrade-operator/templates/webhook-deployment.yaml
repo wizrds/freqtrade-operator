@@ -1,0 +1,111 @@
+{{- if .Values.admissionWebhook.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "freqtrade-operator-webhook.fullname" . }}
+  labels:
+    {{- include "freqtrade-operator-webhook.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.admissionWebhook.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "freqtrade-operator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.admissionWebhook.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "freqtrade-operator-webhook.labels" . | nindent 8 }}
+        {{- with .Values.admissionWebhook.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "freqtrade-operator.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.admissionWebhook.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.admissionWebhook.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - webhook
+          ports:
+            - name: webhook
+              containerPort: {{ .Values.admissionWebhook.port }}
+              protocol: TCP
+            {{- with .Values.admissionWebhook.service.ports }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.admissionWebhook.env }}
+          env:
+          {{- range $name, $value := .Values.admissionWebhook.env }}
+          - name: {{ $name }}
+            {{- if $value.value }}
+            value: "{{ $value.value }}"
+            {{- else if $value.secretKeyRef }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $value.secretKeyRef.name }}
+                key: {{ $value.secretKeyRef.key }}
+            {{- else if $value.configMapKeyRef }}
+            valueFrom:
+              configMapKeyRef:
+                name: {{ $value.configMapKeyRef.name }}
+                key: {{ $value.configMapKeyRef.key }}
+            {{- else if $value.fieldRef }}
+            valueFrom:
+              fieldRef:
+                fieldPath: {{ $value.fieldRef.fieldPath }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.admissionWebhook.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.admissionWebhook.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.admissionWebhook.resources | nindent 12 }}
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /etc/ssl/certs
+              readOnly: true
+            {{- with .Values.admissionWebhook.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tls-certs
+          secret:
+            {{- if .Values.admissionWebhook.tls.existingSecret }}
+            secretName: {{ .Values.admissionWebhook.tls.existingSecret }}
+            {{- else }}
+            secretName: {{ include "freqtrade-operator-webhook.fullname" . }}-tls
+            {{- end }}
+            items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+        {{- with .Values.admissionWebhook.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.admissionWebhook.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.admissionWebhook.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.admissionWebhook.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

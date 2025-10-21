@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "freqtrade-operator-controller.fullname" . }}
+  labels:
+    {{- include "freqtrade-operator-controller.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controller.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "freqtrade-operator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.controller.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "freqtrade-operator-controller.labels" . | nindent 8 }}
+        {{- with .Values.controller.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "freqtrade-operator.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.controller.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.controller.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - controller
+          {{- if .Values.controller.env }}
+          env:
+          {{- range $name, $value := .Values.env }}
+          - name: {{ $name }}
+            {{- if $value.value }}
+            value: "{{ $value.value }}"
+            {{- else if $value.secretKeyRef }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $value.secretKeyRef.name }}
+                key: {{ $value.secretKeyRef.key }}
+            {{- else if $value.configMapKeyRef }}
+            valueFrom:
+              configMapKeyRef:
+                name: {{ $value.configMapKeyRef.name }}
+                key: {{ $value.configMapKeyRef.key }}
+            {{- else if $value.fieldRef }}
+            valueFrom:
+              fieldRef:
+                fieldPath: {{ $value.fieldRef.fieldPath }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.controller.resources | nindent 12 }}
+          {{- with .Values.controller.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.controller.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

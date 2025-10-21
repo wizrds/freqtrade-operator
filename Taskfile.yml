@@ -1,0 +1,22 @@
+version: '3'
+
+silent: true
+
+includes:
+  version:
+    taskfile: .taskfile/version.yml
+  utils:
+    taskfile: .taskfile/utils.yml
+  rust:
+    taskfile: .taskfile/rust.yml
+  dev:
+    taskfile: .taskfile/dev.yml
+  docker:
+    taskfile: .taskfile/docker.yml
+  helm:
+    taskfile: .taskfile/helm.yml
+    vars:
+      HELM_DOCS_VERSION: "v1.13.1"
+
+vars:
+  FEATURES: ""

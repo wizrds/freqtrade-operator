@@ -1,0 +1,14 @@
+.chglog/*
+.devcontainer/*
+compose/*
+deploy/*
+uv.lock
+.gitignore
+.gitlint
+.pre-commit-config.yaml
+atlas.hcl
+.repomixignore
+repomix.config.json
+repomix.instruction.md
+Taskfile.yml
+LICENSE

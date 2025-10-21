@@ -1,0 +1,20 @@
+{{- if .Values.admissionWebhook.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "freqtrade-operator-webhook.fullname" . }}
+  labels:
+    {{- include "freqtrade-operator-webhook.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.admissionWebhook.service.type }}
+  ports:
+    - port: {{ .Values.admissionWebhook.port }}
+      targetPort: webhook
+      protocol: TCP
+      name: webhook
+    {{- with .Values.admissionWebhook.service.ports }}
+    {{- toYaml . | nindent 6 }}
+    {{- end }}
+  selector:
+    {{- include "freqtrade-operator.selectorLabels" . | nindent 4 }}
+{{- end }}
