@@ -206,7 +206,7 @@ jobs:
     if: |
       !contains(github.event.head_commit.message, '[skip-ci]') &&
       github.repository == 'wizrds/freqtrade-operator'
-    needs: [build-binaries, generate-sbom, build-docker]
+    needs: [generate-sbom, build-docker]
     name: Create GitHub release
     runs-on: ubuntu-latest
     permissions:
