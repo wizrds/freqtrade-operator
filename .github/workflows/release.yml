@@ -12,8 +12,8 @@ env:
 jobs:
   generate-sbom:
     if: |
-      "!contains(github.event.head_commit.message, '[skip-ci]') &&
-      github.repository == 'wizrds/freqtrade-operator'"
+      !contains(github.event.head_commit.message, '[skip-ci]') &&
+      github.repository == 'wizrds/freqtrade-operator'
     name: Generate SBOM
     runs-on: ubuntu-latest
     permissions:
@@ -52,8 +52,8 @@ jobs:
 
   build-docker:
     if: |
-      "!contains(github.event.head_commit.message, '[skip-ci]') &&
-      github.repository == 'wizrds/freqtrade-operator'"
+      !contains(github.event.head_commit.message, '[skip-ci]') &&
+      github.repository == 'wizrds/freqtrade-operator'
     needs: [generate-sbom]
     name: Build and push docker image.
     runs-on: ubuntu-latest
@@ -136,8 +136,8 @@ jobs:
 
   publish-helm-charts:
     if: |
-      "!contains(github.event.head_commit.message, '[skip-ci]') &&
-      github.repository == 'wizrds/freqtrade-operator'"
+      !contains(github.event.head_commit.message, '[skip-ci]') &&
+      github.repository == 'wizrds/freqtrade-operator'
     name: Publish Helm Charts
     runs-on: ubuntu-latest
     strategy:
@@ -204,8 +204,8 @@ jobs:
 
   make-release:
     if: |
-      "!contains(github.event.head_commit.message, '[skip-ci]') &&
-      github.repository == 'wizrds/freqtrade-operator'"
+      !contains(github.event.head_commit.message, '[skip-ci]') &&
+      github.repository == 'wizrds/freqtrade-operator'
     needs: [build-binaries, generate-sbom, build-docker]
     name: Create GitHub release
     runs-on: ubuntu-latest
