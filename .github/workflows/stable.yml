@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
 
+env:
+  IMAGE_REGISTRY: "ghcr.io"
+  IMAGE_NAME: "wizrds/freqtrade-operator"
+  IMAGE_URI: "ghcr.io/wizrds/freqtrade-operator"
+
 jobs:
   bump:
     if: |
@@ -104,10 +109,8 @@ jobs:
         echo "chart_path=$CHART_PATH" >> $GITHUB_OUTPUT
 
     - name: Login to GitHub Container Registry
-      env:
-        CR_PAT: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "$CR_PAT" | helm registry login ${{ env.IMAGE_REGISTRY }} --username ${{ github.actor }} --password-stdin
+        echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.IMAGE_REGISTRY }} --username ${{ github.actor }} --password-stdin
 
     - name: Check if chart version already exists
       id: check_version
