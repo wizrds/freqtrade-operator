@@ -2,10 +2,10 @@ apiVersion: v2
 name: freqtrade-operator
 description: Helm chart for deploying the freqtrade-operator
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.1.2
+appVersion: 0.1.2
 dependencies:
   - name: freqtrade-operator-crds
-    version: 0.1.0
-    repository: "oci://ghcr.io/wizrds/freqtrade-operator/charts"
+    version: 0.1.2
+    repository: oci://ghcr.io/wizrds/freqtrade-operator/charts
     condition: installCRDs

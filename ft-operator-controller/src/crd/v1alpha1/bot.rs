@@ -64,7 +64,7 @@ fn default_database() -> String {
     "sqlite:///database.db".to_string()
 }
 
-fn any_nested_object_schema(_: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+fn any_nested_object_schema(_: &mut schemars::generate::SchemaGenerator) -> schemars::Schema {
     serde_json::from_value(serde_json::json!({
         "type": "object",
         "additionalProperties": {

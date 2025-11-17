@@ -4,7 +4,7 @@
         "dockerfile": "Dockerfile",
         "context": "..",
 		"args": {
-			"VARIANT": "1.85_3.12"
+			"VARIANT": "1.90_3.12"
 		}
     },
 	"customizations": {

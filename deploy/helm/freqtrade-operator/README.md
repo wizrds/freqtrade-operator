@@ -2,7 +2,7 @@
 
 Helm chart for deploying the freqtrade-operator
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.1.2](https://img.shields.io/badge/Version-0.1.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.2](https://img.shields.io/badge/AppVersion-0.1.2-informational?style=flat-square)
 
 ## Installing the Chart
 
@@ -16,7 +16,7 @@ $ helm upgrade --install freqtrade-operator oci://ghcr.io/wizrds/freqtrade-opera
 
 | Repository | Name | Version |
 |------------|------|---------|
-| oci://ghcr.io/wizrds/freqtrade-operator/charts | freqtrade-operator-crds | 0.1.0 |
+| oci://ghcr.io/wizrds/freqtrade-operator/charts | freqtrade-operator-crds | 0.1.2 |
 
 ## Values
 

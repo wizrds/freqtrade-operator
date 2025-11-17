@@ -10,6 +10,6 @@ pub fn generate_crds() {
         merge_crds(vec![V1Alpha1Bot::crd()], "v1alpha1").expect("failed to merge Bot CRDs"),
     ] {
         println!("---");
-        println!("{}", serde_yaml::to_string(&crd).unwrap());
+        println!("{}", serde_norway::to_string(&crd).unwrap());
     }
 }
